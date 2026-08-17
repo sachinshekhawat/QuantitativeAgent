@@ -44,32 +44,55 @@ async def main():
     def quant_analyst_node(state: AgentState):
         messages = state.get("messages", [])
         ticker = state.get("ticker_symbol", "Unknown")
+        
+        # Check if the last message was a tool result
+        last_message = messages[-1] if messages else None
+        just_finished_tool = last_message and last_message.type == "tool"
+        
+        # If we just got data back from the tool, DON'T force a tool call again!
+        if just_finished_tool:
+            quant_llm = llm.bind_tools(mcp_tools) # Let it speak normally
+        else:
+            quant_llm = llm.bind_tools(mcp_tools, tool_choice="calculate_moving_average") # Force the tool
+            
         prompt = SystemMessage(
-            content=f"You are a Quant Analyst. Use your available tools to fetch market data AND "
-                    f"calculate the 20-day moving average for {ticker}. Summarize price action vs technical level."
+            content=f"You are a Quant Analyst. "
+                    f"Calculate the 20-day moving average for {ticker}. "
+                    f"If you have the data, summarize the price action and DO NOT call the tool again."
         )
-        response = llm_with_tools.invoke([prompt] + list(messages))
+        response = quant_llm.invoke([prompt] + list(messages))
         return {"messages": [response]}
 
-    # 3. Compliance Node with Risk Percentage Scoring
     def compliance_node(state: AgentState):
         messages = state.get("messages", [])
         ticker = state.get("ticker_symbol", "Unknown")
+        
+        last_message = messages[-1] if messages else None
+        just_finished_tool = last_message and last_message.type == "tool"
+        
+        # Prevent infinite loop by removing tool_choice after the tool runs
+        if just_finished_tool:
+             compliance_llm = llm.bind_tools(mcp_tools)
+        else:
+             compliance_llm = llm.bind_tools(mcp_tools, tool_choice="search_company_document")
+        
         prompt = SystemMessage(
-            content=f"You are a Compliance & Risk Officer. Search regulatory news for {ticker}. "
-                    f"Evaluate legal risks, market volatility, and moving average stance. "
+            content=f"You are a Compliance Officer analyzing {ticker}. "
+                    f"Check '10k_report.pdf' for internal risk factors. "
+                    f"If you have the PDF data, synthesize it and DO NOT call the tool again. "
                     f"At the end of your analysis, specify a quantitative Risk Score on a new line strictly in this format: "
-                    f"'RISK SCORE: X%' (where X is an integer from 0 to 100). "
-                    f"If legal/regulatory issues are present, set X >= 60."
+                    f"'RISK SCORE: X%'."
         )
-        response = llm_with_tools.invoke([prompt] + list(messages))
+        response = compliance_llm.invoke([prompt] + list(messages))
         content_text = str(response.content)
         
-        # Extract Risk Score using Regex
         score_match = re.search(r"RISK SCORE:\s*(\d+)%", content_text, re.IGNORECASE)
         extracted_score = int(score_match.group(1)) if score_match else 20
         risk_detected = extracted_score >= 50 or "RISK DETECTED" in content_text
         
+        if not response.content:
+             response.content = content_text
+             
         return {
             "messages": [response],
             "risk_score": extracted_score,
@@ -103,10 +126,8 @@ async def main():
         caller_message = s["messages"][-2]
         caller_content = caller_message.content
         
-        # If the content is a string, make it lowercase
         if isinstance(caller_content, str):
             text_to_check = caller_content.lower()
-        # If the content is a list, extract text from the dictionaries
         elif isinstance(caller_content, list):
             text_to_check = " ".join([
                 item.get("text", "").lower() 
@@ -115,16 +136,16 @@ async def main():
         else:
             text_to_check = ""
             
-        # Also check the tool_calls themselves for clues if the content is empty
-        if not text_to_check and hasattr(caller_message, "tool_calls"):
+        if hasattr(caller_message, "tool_calls") and caller_message.tool_calls:
             for tc in caller_message.tool_calls:
                 if tc["name"] in ["get_market_data", "calculate_moving_average"]:
                     return "quant_analyst"
-                elif tc["name"] == "search_regulatory_news":
+                # ADDED THE PDF TOOL HERE!
+                elif tc["name"] in ["search_regulatory_news", "search_company_document"]:
                     return "compliance"
             
         return "quant_analyst" if "quant" in text_to_check else "compliance"
-        
+    
     workflow.add_conditional_edges("tools", route_from_tools)
     workflow.add_edge("supervisor", END)
 

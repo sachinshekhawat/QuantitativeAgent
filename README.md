@@ -30,18 +30,21 @@ Ensure you have Python 3.10+ installed. Create and activate a virtual environmen
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+```
 
-### Step 2: Install Dependencies
+### 2. Install Dependencies
 ```bash
 pip install langgraph langchain-core langchain-google-genai mcp langchain-mcp-adapters yfinance duckduckgo-search==5.3.1 python-dotenv pypdf faiss-cpu sentence-transformers langchain-huggingface
+```
 
 ### 3. Environment Setup
 Create a `.env` file in the root directory and add your DeepSeek API key:
 ```text
 LLM_API_KEY=your_api_key_here # Gemini Api key
-
+```
 ### 4. Run the Pipeline
 The system automatically boots the MCP server as a subprocess and initializes the LangGraph client.
 
 ```bash
 python agent.py
+```

@@ -1,6 +1,6 @@
 # Agentic Financial Due Diligence Pipeline
 
-An multi-agent AI system built to automate quantitative financial analysis, regulatory compliance checks, and portfolio allocation. This project leverages **LangGraph** for stateful agent orchestration, the **Model Context Protocol (MCP)** for secure, decoupled tool execution, and **Local RAG** for parsing massive financial documents.
+A multi-agent AI system built to automate quantitative financial analysis, regulatory compliance checks, and portfolio allocation. This project leverages **LangGraph** for stateful agent orchestration, the **Model Context Protocol (MCP)** for secure, decoupled tool execution, and **Local RAG** for parsing massive financial documents.
 
 ## 🏗 Architecture Overview
 

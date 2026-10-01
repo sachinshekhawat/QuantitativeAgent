@@ -1,6 +1,6 @@
 # Agentic Financial Due Diligence Pipeline
 
-A production-grade, multi-agent AI system built to automate quantitative financial analysis, regulatory compliance checks, and portfolio allocation. This project leverages **LangGraph** for stateful agent orchestration, the **Model Context Protocol (MCP)** for secure, decoupled tool execution, and **Local RAG** for parsing massive financial documents.
+An multi-agent AI system built to automate quantitative financial analysis, regulatory compliance checks, and portfolio allocation. This project leverages **LangGraph** for stateful agent orchestration, the **Model Context Protocol (MCP)** for secure, decoupled tool execution, and **Local RAG** for parsing massive financial documents.
 
 ## 🏗 Architecture Overview
 
@@ -38,7 +38,7 @@ pip install langgraph langchain-core langchain-google-genai mcp langchain-mcp-ad
 ```
 
 ### 3. Environment Setup
-Create a `.env` file in the root directory and add your DeepSeek API key:
+Create a `.env` file in the root directory and add your Gemini API key:
 ```text
 LLM_API_KEY=your_api_key_here # Gemini Api key
 ```
